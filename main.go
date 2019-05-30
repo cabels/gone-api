@@ -15,11 +15,16 @@ import (
 type App struct {
 	URLTemplate string
 	Accept      string
-	Query       string
-	Source      string
-	Size        string
-	Offset      string
+	Params      *Params
 	Client      http.Client
+}
+
+// Params struct
+type Params struct {
+	Query  string
+	Source string
+	Size   string
+	Offset string
 }
 
 // Body struct
@@ -41,8 +46,15 @@ type Document struct {
 var app *App
 
 func main() {
-	app = NewApp()
-	searchRes, searchErr := app.Search(app.Query, app.Source, app.Size, app.Offset)
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	params := InitParams()
+	app = NewApp(params)
+
+	searchRes, searchErr := app.Search()
 	if searchErr != nil {
 		panic(searchErr)
 	}
@@ -52,7 +64,7 @@ func main() {
 }
 
 // NewApp constructor
-func NewApp() *App {
+func NewApp(params *Params) *App {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -60,22 +72,29 @@ func NewApp() *App {
 	return &App{
 		URLTemplate: os.Getenv("URL_TEMPLATE"),
 		Accept:      os.Getenv("ACCEPT_HEADER"),
-		Query:       url.QueryEscape(os.Getenv("Q_PARAM")),
-		Source:      url.QueryEscape(os.Getenv("SRC_PARAM")),
-		Size:        url.QueryEscape(os.Getenv("SIZE_PARAM")),
-		Offset:      url.QueryEscape(os.Getenv("OFFSET_PARAM")),
+		Params:      params,
 		Client:      http.Client{},
 	}
 }
 
+// InitParams initializes params
+func InitParams() *Params {
+	return &Params{
+		Query:  url.QueryEscape(os.Getenv("Q_PARAM")),
+		Source: url.QueryEscape(os.Getenv("SRC_PARAM")),
+		Size:   os.Getenv("SIZE_PARAM"),
+		Offset: os.Getenv("OFFSET_PARAM"),
+	}
+}
+
 // Search method
-func (app *App) Search(q, src, size, offset string) (*Body, error) {
+func (app *App) Search() (*Body, error) {
 	url := fmt.Sprintf(
 		app.URLTemplate,
-		url.QueryEscape(q),
-		url.QueryEscape(src),
-		url.QueryEscape(size),
-		url.QueryEscape(offset))
+		app.Params.Query,
+		app.Params.Source,
+		app.Params.Size,
+		app.Params.Offset)
 
 	req, reqErr := http.NewRequest("GET", url, nil)
 	if reqErr != nil {
