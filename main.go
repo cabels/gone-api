@@ -115,21 +115,12 @@ func Search(w http.ResponseWriter, r *http.Request) {
 		app.Params.Size,
 		app.Params.Offset)
 
-	req, reqErr := http.NewRequest("GET", url, nil)
-	if reqErr != nil {
-		//
-	}
+	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Set("Accept", app.Accept)
 
-	response, responseErr := app.Client.Do(req)
-	if responseErr != nil {
-		//
-	}
+	response, _ := app.Client.Do(req)
 
 	var body *Body
-	decodeErr := json.NewDecoder(response.Body).Decode(&body)
-	if decodeErr != nil {
-		//
-	}
+	json.NewDecoder(response.Body).Decode(&body)
 	render.JSON(w, r, body)
 }
